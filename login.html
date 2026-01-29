@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUKKER - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #000;
+            --secondary: #FF6B35;
+            --accent: #04A7DE;
+            --light-gray: #f5f5f5;
+            --text: #222;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--light-gray) 0%, white 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #ff5722;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 1rem;
+        }
+
+        .forgot-password a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+
+        .register-link a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background-color: #ffe0e0;
+            border-left: 4px solid #dc3545;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: #721c24;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: #155724;
+            display: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .guest-btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: #f5f5f5;
+            color: var(--text);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .guest-btn:hover {
+            background-color: #eee;
+            border-color: var(--secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚚</div>
+            <h1>TRUKKER</h1>
+            <p>Inicia sesión en tu cuenta</p>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="tu@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+            </div>
+
+            <div class="forgot-password">
+                <a href="#" onclick="forgotPassword(event)">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit" class="btn">Inicia Sesión</button>
+        </form>
+
+        <div class="divider">O continúa como</div>
+        <button type="button" class="guest-btn" onclick="loginAsGuest()">
+            👤 Continuar como Invitado
+        </button>
+
+        <div class="register-link">
+            ¿No tienes cuenta? <a href="register.html">Regístrate aquí</a>
+        </div>
+    </div>
+
+    <!-- ========================================
+         FIREBASE SDKs - COMPAT MODE v10.8.0
+         ======================================== -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script>
+        // Verificar si ya hay sesión activa
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log("✅ Usuario ya autenticado:", user.email);
+                // Redirigir según rol
+                try {
+                    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const role = userDoc.data().role;
+                        window.location.href = role === 'transportista' ? 
+                            'dashboard-transportista.html' : 'dashboard-empresa.html';
+                    }
+                } catch (error) {
+                    console.error("Error obteniendo rol:", error);
+                }
+            }
+        });
+
+        // Login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                showSuccess('Iniciando sesión...');
+                
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const uid = userCredential.user.uid;
+
+                // Obtener rol del usuario
+                const userDoc = await firebase.firestore().collection('users').doc(uid).get();
+                
+                if (!userDoc.exists) {
+                    showError('Usuario no encontrado en la base de datos');
+                    return;
+                }
+
+                const role = userDoc.data().role;
+                
+                showSuccess('✅ Sesión iniciada! Redirigiendo...');
+                
+                setTimeout(() => {
+                    window.location.href = role === 'transportista' ? 
+                        'dashboard-transportista.html' : 'dashboard-empresa.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Error login:', error);
+                
+                if (error.code === 'auth/user-not-found') {
+                    showError('Usuario no encontrado. ¿Necesitas registrarte?');
+                } else if (error.code === 'auth/wrong-password') {
+                    showError('Contraseña incorrecta');
+                } else if (error.code === 'auth/invalid-email') {
+                    showError('Email inválido');
+                } else if (error.code === 'auth/too-many-requests') {
+                    showError('Demasiados intentos. Intenta más tarde.');
+                } else {
+                    showError('Error: ' + error.message);
+                }
+            }
+        });
+
+        // Recuperar contraseña
+        function forgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            
+            if (!email) {
+                showError('Ingresa tu email primero');
+                return;
+            }
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    showSuccess('✅ Email de recuperación enviado. Revisa tu bandeja de entrada.');
+                })
+                .catch((error) => {
+                    showError('Error: ' + error.message);
+                });
+        }
+
+        // Login como invitado
+        function loginAsGuest() {
+            showSuccess('Entrando como invitado...');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        // Verificar Firebase al cargar
+        window.addEventListener('load', () => {
+            console.log('✅ login.html cargado');
+            if (typeof firebase !== 'undefined') {
+                console.log('✅ Firebase detectado');
+            } else {
+                console.error('❌ Firebase NO cargado');
+            }
+        });
+    </script>
+</body>
+</html>

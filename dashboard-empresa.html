@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUKKER - Dashboard Empresa</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="logo">📦 TRUKKER - Empresa</div>
+        <div>
+            <span id="user-name" style="margin-right: 1rem;"></span>
+            <button onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>Bienvenido a tu Dashboard</h1>
+            <p>Gestiona tus solicitudes de envío desde aquí</p>
+
+            <!-- ESTADÍSTICAS -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Solicitudes Activas</h3>
+                    <div class="number" id="solicitudes-activas">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Entregas Completadas</h3>
+                    <div class="number" id="entregas-completadas">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Gastado</h3>
+                    <div class="number" id="total-gastado">$0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Transportistas Activos</h3>
+                    <div class="number" id="transportistas-activos">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CREAR SOLICITUD -->
+        <div class="section">
+            <h2>Crear Nueva Solicitud de Envío</h2>
+            <form onsubmit="crearSolicitud(event)">
+                <div class="form-group">
+                    <label>Origen</label>
+                    <input type="text" id="sol-origen" placeholder="Monterrey" required>
+                </div>
+                <div class="form-group">
+                    <label>Destino</label>
+                    <input type="text" id="sol-destino" placeholder="México D.F." required>
+                </div>
+                <div class="form-group">
+                    <label>Peso (Toneladas)</label>
+                    <input type="number" id="sol-peso" placeholder="5" required>
+                </div>
+                <div class="form-group">
+                    <label>Presupuesto Máximo ($)</label>
+                    <input type="number" id="sol-presupuesto" placeholder="2500" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Mercancía</label>
+                    <select id="sol-tipo" required>
+                        <option value="">Selecciona...</option>
+                        <option value="general">General</option>
+                        <option value="refrigerado">Refrigerado</option>
+                        <option value="fragil">Frágil</option>
+                        <option value="peligroso">Peligroso</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Entrega</label>
+                    <input type="date" id="sol-fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="sol-descripcion" rows="3" placeholder="Detalles de tu carga..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-secondary">Publicar Solicitud</button>
+            </form>
+        </div>
+
+        <!-- MIS SOLICITUDES -->
+        <div class="section">
+            <h2>Mis Solicitudes</h2>
+            <table id="solicitudes-table">
+                <thead>
+                    <tr>
+                        <th>Ruta</th>
+                        <th>Peso</th>
+                        <th>Presupuesto</th>
+                        <th>Estado</th>
+                        <th>Ofertas</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="solicitudes-empty" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No tienes solicitudes creadas</p>
+            </div>
+        </div>
+
+        <!-- PERFIL -->
+        <div class="section">
+            <h2>Perfil de Mi Empresa</h2>
+            <button class="btn" onclick="openPerfilModal()">Editar Perfil</button>
+            <table style="margin-top: 1rem;">
+                <tr><th>Campo</th><th>Valor</th></tr>
+                <tr><td>Nombre de Empresa</td><td id="perfil-nombre">-</td></tr>
+                <tr><td>Email</td><td id="perfil-email">-</td></tr>
+                <tr><td>Teléfono</td><td id="perfil-telefono">-</td></tr>
+                <tr><td>Giro</td><td id="perfil-giro">-</td></tr>
+                <tr><td>Ciudad</td><td id="perfil-ciudad">-</td></tr>
+                <tr><td>RFC</td><td id="perfil-rfc">-</td></tr>
+                <tr><td>Volumen Mensual</td><td id="perfil-volumen">-</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL PERFIL -->
+    <div id="perfil-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePerfilModal()">&times;</span>
+            <h2>Editar Perfil</h2>
+            <form onsubmit="guardarPerfil(event)">
+                <div class="form-group">
+                    <label>Nombre de Empresa</label>
+                    <input type="text" id="edit-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="edit-telefono" required>
+                </div>
+                <div class="form-group">
+                    <label>Giro</label>
+                    <select id="edit-giro" required>
+                        <option value="">Selecciona...</option>
+                        <option value="retail">Retail</option>
+                        <option value="manufactura">Manufactura</option>
+                        <option value="alimenticia">Alimenticia</option>
+                        <option value="logistica">Logística</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" id="edit-ciudad" required>
+                </div>
+                <div class="form-group">
+                    <label>RFC</label>
+                    <input type="text" id="edit-rfc" required>
+                </div>
+                <div class="form-group">
+                    <label>Volumen Mensual (Toneladas)</label>
+                    <input type="number" id="edit-volumen" required>
+                </div>
+                <button type="submit" class="btn">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================
+         FIREBASE SDKs - COMPAT MODE v10.8.0
+         ======================================== -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script>
+        let currentUser = null;
+
+        // Verificar autenticación
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-name').textContent = user.email;
+                await cargarDatos();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function cargarDatos() {
+            try {
+                const empresaDoc = await firebase.firestore().collection('empresas').doc(currentUser.uid).get();
+                
+                if (empresaDoc.exists) {
+                    const data = empresaDoc.data();
+                    
+                    // Estadísticas
+                    document.getElementById('entregas-completadas').textContent = data.entregasCompletadas || 0;
+                    document.getElementById('total-gastado').textContent = '$' + (data.gastosTotal || 0);
+                    
+                    // Perfil
+                    document.getElementById('perfil-nombre').textContent = data.empresaNombre || '-';
+                    document.getElementById('perfil-email').textContent = data.email || '-';
+                    document.getElementById('perfil-telefono').textContent = data.telefono || '-';
+                    document.getElementById('perfil-giro').textContent = data.giro || '-';
+                    document.getElementById('perfil-ciudad').textContent = data.ciudad || '-';
+                    document.getElementById('perfil-rfc').textContent = data.rfc || '-';
+                    document.getElementById('perfil-volumen').textContent = data.volumen || '-';
+                    
+                    // Pre-llenar modal editar
+                    document.getElementById('edit-nombre').value = data.empresaNombre || '';
+                    document.getElementById('edit-telefono').value = data.telefono || '';
+                    document.getElementById('edit-giro').value = data.giro || '';
+                    document.getElementById('edit-ciudad').value = data.ciudad || '';
+                    document.getElementById('edit-rfc').value = data.rfc || '';
+                    document.getElementById('edit-volumen').value = data.volumen || '';
+                }
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+            }
+        }
+
+        function openPerfilModal() {
+            document.getElementById('perfil-modal').classList.add('active');
+        }
+
+        function closePerfilModal() {
+            document.getElementById('perfil-modal').classList.remove('active');
+        }
+
+        async function crearSolicitud(e) {
+            e.preventDefault();
+            
+            try {
+                const data = {
+                    uid: currentUser.uid,
+                    origen: document.getElementById('sol-origen').value,
+                    destino: document.getElementById('sol-destino').value,
+                    peso: parseInt(document.getElementById('sol-peso').value),
+                    presupuesto: parseInt(document.getElementById('sol-presupuesto').value),
+                    tipo: document.getElementById('sol-tipo').value,
+                    fecha: document.getElementById('sol-fecha').value,
+                    descripcion: document.getElementById('sol-descripcion').value,
+                    estado: 'abierta',
+                    createdAt: new Date()
+                };
+                
+                await firebase.firestore().collection('solicitudes').add(data);
+                alert('✅ Solicitud publicada exitosamente');
+                e.target.reset();
+                await cargarDatos();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function guardarPerfil(e) {
+            e.preventDefault();
+            
+            try {
+                const data = {
+                    empresaNombre: document.getElementById('edit-nombre').value,
+                    telefono: document.getElementById('edit-telefono').value,
+                    giro: document.getElementById('edit-giro').value,
+                    ciudad: document.getElementById('edit-ciudad').value,
+                    rfc: document.getElementById('edit-rfc').value,
+                    volumen: parseInt(document.getElementById('edit-volumen').value)
+                };
+                
+                await firebase.firestore().collection('empresas').doc(currentUser.uid).update(data);
+                await firebase.firestore().collection('users').doc(currentUser.uid).update(data);
+                
+                alert('✅ Perfil actualizado');
+                closePerfilModal();
+                await cargarDatos();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            if (confirm('¿Cerrar sesión?')) {
+                firebase.auth().signOut()
+                    .then(() => {
+                        console.log('✅ Sesión cerrada');
+                        window.location.href = 'login.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error logout:', error);
+                        window.location.href = 'login.html'; // Forzar redirect
+                    });
+            }
+        }
+
+        // Verificar Firebase al cargar
+        window.addEventListener('load', () => {
+            console.log('✅ dashboard-empresa.html cargado');
+        });
+    </script>
+</body>
+</html>

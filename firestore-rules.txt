@@ -1,0 +1,372 @@
+// ==========================================
+// FIRESTORE SECURITY RULES - REGLAS DE SEGURIDAD
+// ==========================================
+//
+// INSTRUCCIONES:
+// 1. Ve a Firebase Console
+// 2. Firestore Database → Rules
+// 3. Reemplaza TODO el contenido con esto
+// 4. Haz clic en "Publish"
+// 5. Espera 1-2 minutos
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // REGLAS GLOBALES
+    // ==========================================
+    
+    // Función para verificar si usuario está autenticado
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Función para obtener el UID del usuario actual
+    function currentUid() {
+      return request.auth.uid;
+    }
+    
+    // Función para verificar si es el propietario del documento
+    function isOwner(uid) {
+      return currentUid() == uid;
+    }
+    
+    // ==========================================
+    // COLECCIÓN: USERS
+    // ==========================================
+    
+    match /users/{uid} {
+      // Leer: Solo el usuario o admin puede leer su propio perfil
+      allow read: if isAuth() && (isOwner(uid) || request.auth.token.admin == true);
+      
+      // Crear: Cualquiera puede crear su propio usuario
+      allow create: if isAuth() && isOwner(uid) && 
+                       request.resource.data.email != null &&
+                       request.resource.data.nombre != null &&
+                       request.resource.data.role != null;
+      
+      // Actualizar: Solo el propietario puede actualizar su documento
+      allow update: if isAuth() && isOwner(uid);
+      
+      // Eliminar: Solo admin (no permitido para usuarios normales)
+      allow delete: if request.auth.token.admin == true;
+      
+      // Subcollección: Historial de usuario
+      match /history/{document=**} {
+        allow read: if isAuth() && isOwner(uid);
+        allow write: if isAuth() && isOwner(uid);
+      }
+    }
+    
+    // ==========================================
+    // COLECCIÓN: TRANSPORTISTAS
+    // ==========================================
+    
+    match /transportistas/{uid} {
+      // Leer: Todos los usuarios autenticados pueden ver
+      allow read: if isAuth();
+      
+      // Crear: El transportista crea su propio perfil
+      allow create: if isAuth() && isOwner(uid);
+      
+      // Actualizar: Solo el propietario
+      allow update: if isAuth() && isOwner(uid);
+      
+      // Eliminar: Solo el propietario
+      allow delete: if isAuth() && isOwner(uid);
+    }
+    
+    // ==========================================
+    // COLECCIÓN: EMPRESAS
+    // ==========================================
+    
+    match /empresas/{uid} {
+      // Leer: Todos pueden ver perfiles de empresa
+      allow read: if isAuth();
+      
+      // Crear: La empresa crea su propio perfil
+      allow create: if isAuth() && isOwner(uid);
+      
+      // Actualizar: Solo el propietario
+      allow update: if isAuth() && isOwner(uid);
+      
+      // Eliminar: Solo el propietario
+      allow delete: if isAuth() && isOwner(uid);
+    }
+    
+    // ==========================================
+    // COLECCIÓN: CAPACIDADES
+    // ==========================================
+    
+    match /capacidades/{capacidadId} {
+      // Leer: Todos pueden ver capacidades disponibles
+      allow read: if isAuth();
+      
+      // Crear: Solo transportistas pueden crear
+      allow create: if isAuth() && 
+                       resource.data.uid == currentUid() &&
+                       request.resource.data.toneladas > 0 &&
+                       request.resource.data.precio > 0;
+      
+      // Actualizar: Solo el propietario (transportista)
+      allow update: if isAuth() && 
+                       resource.data.uid == currentUid() &&
+                       request.resource.data.toneladas > 0;
+      
+      // Eliminar: Solo el propietario
+      allow delete: if isAuth() && 
+                       resource.data.uid == currentUid();
+    }
+    
+    // ==========================================
+    // COLECCIÓN: SOLICITUDES
+    // ==========================================
+    
+    match /solicitudes/{solicitudId} {
+      // Leer: Todos pueden ver solicitudes disponibles
+      allow read: if isAuth();
+      
+      // Crear: Solo empresas pueden crear solicitudes
+      allow create: if isAuth() && 
+                       request.resource.data.uid == currentUid() &&
+                       request.resource.data.peso > 0 &&
+                       request.resource.data.presupuesto > 0;
+      
+      // Actualizar: 
+      // - El dueño puede actualizar su solicitud
+      // - Transportista puede actualizar el estado si tiene match
+      allow update: if isAuth() && 
+                       (resource.data.uid == currentUid() ||
+                        resource.data.transportista == currentUid());
+      
+      // Eliminar: Solo el dueño (empresa)
+      allow delete: if isAuth() && 
+                       resource.data.uid == currentUid();
+    }
+    
+    // ==========================================
+    // COLECCIÓN: MATCHES
+    // ==========================================
+    
+    match /matches/{matchId} {
+      // Leer: Solo las partes involucradas + admin
+      allow read: if isAuth() && 
+                      (resource.data.transportistaId == currentUid() ||
+                       resource.data.empresaId == currentUid() ||
+                       request.auth.token.admin == true);
+      
+      // Crear: Transportista oferta o empresa acepta
+      allow create: if isAuth() && 
+                       request.resource.data.transportistaId != null &&
+                       request.resource.data.empresaId != null &&
+                       request.resource.data.precio > 0;
+      
+      // Actualizar: Solo las partes involucradas
+      allow update: if isAuth() && 
+                       (resource.data.transportistaId == currentUid() ||
+                        resource.data.empresaId == currentUid());
+      
+      // Eliminar: Solo si aún no está en tránsito
+      allow delete: if isAuth() && 
+                       (resource.data.transportistaId == currentUid() ||
+                        resource.data.empresaId == currentUid()) &&
+                       resource.data.estado != "en_transito";
+    }
+    
+    // ==========================================
+    // COLECCIÓN: REVIEWS
+    // ==========================================
+    
+    match /reviews/{reviewId} {
+      // Leer: Todos pueden ver reseñas
+      allow read: if isAuth();
+      
+      // Crear: Solo después de completar un viaje
+      allow create: if isAuth() && 
+                       (request.resource.data.transportistaId == currentUid() ||
+                        request.resource.data.empresaId == currentUid()) &&
+                       request.resource.data.calificacion >= 1 &&
+                       request.resource.data.calificacion <= 5;
+      
+      // Actualizar: Solo el autor puede editar
+      allow update: if isAuth() && 
+                       (resource.data.transportistaId == currentUid() ||
+                        resource.data.empresaId == currentUid());
+      
+      // Eliminar: Solo el autor
+      allow delete: if isAuth() && 
+                       (resource.data.transportistaId == currentUid() ||
+                        resource.data.empresaId == currentUid());
+    }
+    
+    // ==========================================
+    // COLECCIÓN: CONVERSATIONS
+    // ==========================================
+    
+    match /conversations/{conversationId} {
+      // Leer: Solo los participantes
+      allow read: if isAuth() && 
+                      currentUid() in resource.data.participants;
+      
+      // Crear: Solo entre dos usuarios
+      allow create: if isAuth() && 
+                       request.resource.data.participants.size() == 2 &&
+                       currentUid() in request.resource.data.participants;
+      
+      // Actualizar: Solo los participantes
+      allow update: if isAuth() && 
+                       currentUid() in resource.data.participants;
+      
+      // Eliminar: Solo si no hay mensajes (protección)
+      allow delete: if false; // Prevenir borrado de conversaciones
+      
+      // Subcollección: Messages
+      match /messages/{messageId} {
+        // Leer: Solo si eres participante de la conversación
+        allow read: if isAuth() && 
+                        currentUid() in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Crear: Solo si eres participante
+        allow create: if isAuth() && 
+                         request.resource.data.senderId == currentUid() &&
+                         currentUid() in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Actualizar: Solo el que envió el mensaje
+        allow update: if isAuth() && 
+                         resource.data.senderId == currentUid();
+        
+        // Eliminar: Solo el que envió el mensaje
+        allow delete: if isAuth() && 
+                         resource.data.senderId == currentUid();
+      }
+    }
+    
+    // ==========================================
+    // COLECCIÓN: NOTIFICATIONS
+    // ==========================================
+    
+    match /notifications/{uid}/{document=**} {
+      // Leer: Solo el propietario
+      allow read: if isAuth() && isOwner(uid);
+      
+      // Crear: El sistema o usuarios autenticados
+      allow create: if isAuth();
+      
+      // Actualizar: Solo el propietario
+      allow update: if isAuth() && isOwner(uid);
+      
+      // Eliminar: Solo el propietario
+      allow delete: if isAuth() && isOwner(uid);
+    }
+    
+    // ==========================================
+    // COLECCIÓN: ADMIN / REPORTS
+    // ==========================================
+    
+    match /admin/{document=**} {
+      // Leer: Solo admin
+      allow read: if request.auth.token.admin == true;
+      
+      // Crear: Solo admin
+      allow create: if request.auth.token.admin == true;
+      
+      // Actualizar: Solo admin
+      allow update: if request.auth.token.admin == true;
+      
+      // Eliminar: Solo admin
+      allow delete: if request.auth.token.admin == true;
+    }
+    
+    // ==========================================
+    // COLECCIÓN: REPORTS (Denuncias/Problemas)
+    // ==========================================
+    
+    match /reports/{reportId} {
+      // Leer: Solo admin o el reportero
+      allow read: if isAuth() && 
+                      (request.auth.token.admin == true ||
+                       resource.data.reportedBy == currentUid());
+      
+      // Crear: Cualquier usuario autenticado
+      allow create: if isAuth() && 
+                       request.resource.data.reportedBy == currentUid() &&
+                       request.resource.data.description != null;
+      
+      // Actualizar: Solo admin
+      allow update: if request.auth.token.admin == true;
+      
+      // Eliminar: Solo admin
+      allow delete: if request.auth.token.admin == true;
+    }
+    
+    // ==========================================
+    // COLECCIÓN: TRANSACTIONS (Pagos)
+    // ==========================================
+    
+    match /transactions/{transactionId} {
+      // Leer: Solo las partes involucradas o admin
+      allow read: if isAuth() && 
+                      (resource.data.userId == currentUid() ||
+                       request.auth.token.admin == true);
+      
+      // Crear: El sistema (no permitir directamente)
+      allow create: if request.auth.token.admin == true;
+      
+      // Actualizar: Solo admin
+      allow update: if request.auth.token.admin == true;
+      
+      // Eliminar: Solo admin
+      allow delete: if request.auth.token.admin == true;
+    }
+    
+    // ==========================================
+    // COLECCIÓN: RATINGS_SUMMARY
+    // ==========================================
+    
+    match /ratingsSummary/{uid} {
+      // Leer: Todos pueden ver resumen de calificaciones
+      allow read: if isAuth();
+      
+      // Crear: El sistema (no permitir)
+      allow create: if false;
+      
+      // Actualizar: El sistema (no permitir directo)
+      allow update: if false;
+      
+      // Eliminar: No permitir
+      allow delete: if false;
+    }
+  }
+}
+
+// ==========================================
+// NOTAS IMPORTANTES
+// ==========================================
+//
+// 1. FIREBASE EMULATOR (Desarrollo Local):
+//    En desarrollo, puedes cambiar a:
+//    match /{document=**} {
+//      allow read, write: if true;
+//    }
+//
+// 2. CUSTOM CLAIMS (Admin):
+//    En Firebase Console:
+//    Authentication → Users → Seleccionar usuario → Custom Claims
+//    Agregar: { "admin": true }
+//
+// 3. PERFORMANCE:
+//    - No hacer queries sin índices en campos múltiples
+//    - Crear índices según sugerencias de Firebase
+//
+// 4. TESTING:
+//    - Usa Firebase Emulator para desarrollo
+//    - npm install -g firebase-tools
+//    - firebase emulator:start
+//
+// 5. SEGURIDAD:
+//    - NUNCA compartas firebase-config.js en público
+//    - Las API Keys no son secretas (está bien exponerlas)
+//    - La seguridad viene de estas Firestore Rules
+//
+// ==========================================

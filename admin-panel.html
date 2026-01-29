@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUKKER - Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #000;
+            --secondary: #FF6B35;
+            --accent: #04A7DE;
+            --light-gray: #f5f5f5;
+            --text: #222;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--light-gray);
+            color: var(--text);
+        }
+        .navbar {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .navbar button { background: var(--secondary); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header h1 { font-size: 2rem; margin-bottom: 1rem; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat-card {
+            background: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--secondary);
+        }
+        .stat-card h3 { color: #666; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .stat-card .number { font-size: 2rem; font-weight: bold; color: var(--secondary); }
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section h2 { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--primary); }
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn:hover { background: #ff5722; transform: translateY(-2px); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        table thead {
+            background: var(--light-gray);
+            font-weight: bold;
+        }
+        table td, table th {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover { background: var(--light-gray); }
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .status-verificado {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-pendiente {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .chart-container {
+            background: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        .chart-container h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">⚙️ TRUKKER - Admin Panel</div>
+        <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Panel de Administración</h1>
+            <p>Estadísticas y gestión de la plataforma</p>
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Usuarios</h3>
+                    <div class="number" id="total-usuarios">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Transportistas</h3>
+                    <div class="number" id="total-transportistas">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Empresas</h3>
+                    <div class="number" id="total-empresas">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total de Viajes</h3>
+                    <div class="number" id="total-viajes">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ingresos Totales</h3>
+                    <div class="number" id="total-ingresos">$0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Usuarios Verificados</h3>
+                    <div class="number" id="usuarios-verificados">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USUARIOS -->
+        <div class="section">
+            <h2>Gestión de Usuarios</h2>
+            <table id="usuarios-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="usuarios-empty" class="empty-state">
+                <div class="empty-state-icon">👤</div>
+                <p>No hay usuarios registrados</p>
+            </div>
+        </div>
+
+        <!-- SOLICITUDES -->
+        <div class="section">
+            <h2>Solicitudes de Envío</h2>
+            <table id="solicitudes-table">
+                <thead>
+                    <tr>
+                        <th>Ruta</th>
+                        <th>Peso</th>
+                        <th>Presupuesto</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="solicitudes-empty" class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p>No hay solicitudes</p>
+            </div>
+        </div>
+
+        <!-- CAPACIDADES -->
+        <div class="section">
+            <h2>Capacidades Publicadas</h2>
+            <table id="capacidades-table">
+                <thead>
+                    <tr>
+                        <th>Origen</th>
+                        <th>Destino</th>
+                        <th>Toneladas</th>
+                        <th>Precio/Ton</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="capacidades-empty" class="empty-state">
+                <div class="empty-state-icon">🚚</div>
+                <p>No hay capacidades publicadas</p>
+            </div>
+        </div>
+
+        <!-- EXPORTAR DATOS -->
+        <div class="section">
+            <h2>Exportar Datos</h2>
+            <p style="margin-bottom: 1rem;">Descarga los datos de la plataforma en formato CSV</p>
+            <button class="btn" onclick="exportarCSV()">📥 Descargar CSV</button>
+        </div>
+
+        <!-- GRÁFICOS -->
+        <div class="section">
+            <h2>Análisis</h2>
+            <div class="charts">
+                <div class="chart-container">
+                    <h3>Usuarios por Rol</h3>
+                    <div id="chart-roles" style="padding: 1rem; background: white; border-radius: 8px; text-align: center;">
+                        <p>Transportistas: <strong id="count-transportistas">0</strong></p>
+                        <p>Empresas: <strong id="count-empresas">0</strong></p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>Viajes Activos</h3>
+                    <div id="chart-viajes" style="padding: 1rem; background: white; border-radius: 8px; text-align: center;">
+                        <p>En Progreso: <strong id="viajes-progreso">0</strong></p>
+                        <p>Completados: <strong id="viajes-completados">0</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script>
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                cargarDatos();
+            }
+        });
+
+        async function cargarDatos() {
+            try {
+                // Cargar usuarios
+                const usersSnapshot = await firebase.firestore().collection('users').get();
+                const usuarios = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                document.getElementById('total-usuarios').textContent = usuarios.length;
+                
+                const transportistas = usuarios.filter(u => u.role === 'transportista');
+                const empresas = usuarios.filter(u => u.role === 'empresa');
+                
+                document.getElementById('total-transportistas').textContent = transportistas.length;
+                document.getElementById('total-empresas').textContent = empresas.length;
+                document.getElementById('count-transportistas').textContent = transportistas.length;
+                document.getElementById('count-empresas').textContent = empresas.length;
+
+                const verificados = usuarios.filter(u => u.verificado).length;
+                document.getElementById('usuarios-verificados').textContent = verificados;
+
+                // Mostrar tabla de usuarios
+                const usuariosTable = document.getElementById('usuarios-table').querySelector('tbody');
+                usuariosTable.innerHTML = '';
+                usuarios.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td>${user.email}</td>
+                            <td>${user.nombre || '-'}</td>
+                            <td><strong>${user.role === 'transportista' ? '🚚 Transportista' : '📦 Empresa'}</strong></td>
+                            <td>
+                                <span class="status-badge ${user.verificado ? 'status-verificado' : 'status-pendiente'}">
+                                    ${user.verificado ? 'Verificado' : 'Pendiente'}
+                                </span>
+                            </td>
+                            <td>${user.createdAt ? new Date(user.createdAt.toDate()).toLocaleDateString('es-MX') : '-'}</td>
+                            <td>
+                                <button class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" 
+                                    onclick="verificarUsuario('${user.id}')">Verificar</button>
+                            </td>
+                        </tr>
+                    `;
+                    usuariosTable.innerHTML += row;
+                });
+
+                if (usuarios.length === 0) {
+                    document.getElementById('usuarios-empty').style.display = 'block';
+                } else {
+                    document.getElementById('usuarios-empty').style.display = 'none';
+                }
+
+                // Cargar solicitudes
+                const solicitudesSnapshot = await firebase.firestore().collection('solicitudes').get();
+                const solicitudes = solicitudesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                document.getElementById('total-viajes').textContent = solicitudes.length;
+
+                const solicitudesTable = document.getElementById('solicitudes-table').querySelector('tbody');
+                solicitudesTable.innerHTML = '';
+                solicitudes.forEach(sol => {
+                    const row = `
+                        <tr>
+                            <td>${sol.origen} → ${sol.destino}</td>
+                            <td>${sol.peso}T</td>
+                            <td>$${sol.presupuesto}</td>
+                            <td>${sol.estado}</td>
+                            <td>${sol.fecha || '-'}</td>
+                        </tr>
+                    `;
+                    solicitudesTable.innerHTML += row;
+                });
+
+                if (solicitudes.length === 0) {
+                    document.getElementById('solicitudes-empty').style.display = 'block';
+                } else {
+                    document.getElementById('solicitudes-empty').style.display = 'none';
+                }
+
+                // Cargar capacidades
+                const capacidadesSnapshot = await firebase.firestore().collection('capacidades').get();
+                const capacidades = capacidadesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const capacidadesTable = document.getElementById('capacidades-table').querySelector('tbody');
+                capacidadesTable.innerHTML = '';
+                capacidades.forEach(cap => {
+                    const row = `
+                        <tr>
+                            <td>${cap.origen}</td>
+                            <td>${cap.destino}</td>
+                            <td>${cap.toneladas}T</td>
+                            <td>$${cap.precio}</td>
+                            <td>${cap.estado}</td>
+                        </tr>
+                    `;
+                    capacidadesTable.innerHTML += row;
+                });
+
+                if (capacidades.length === 0) {
+                    document.getElementById('capacidades-empty').style.display = 'block';
+                } else {
+                    document.getElementById('capacidades-empty').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function verificarUsuario(uid) {
+            try {
+                await firebase.firestore().collection('users').doc(uid).update({ verificado: true });
+                alert('✅ Usuario verificado');
+                cargarDatos();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function exportarCSV() {
+            alert('Función de exportación CSV disponible pronto');
+        }
+
+        function logout() {
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
+</body>
+</html>

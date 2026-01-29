@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUKKER - Registro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #000;
+            --secondary: #FF6B35;
+            --accent: #04A7DE;
+            --light-gray: #f5f5f5;
+            --text: #222;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--light-gray) 0%, white 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+        }
+
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-option {
+            position: relative;
+        }
+
+        .role-option input[type="radio"] {
+            display: none;
+        }
+
+        .role-label {
+            display: block;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .role-option input[type="radio"]:checked + .role-label {
+            border-color: var(--secondary);
+            background-color: rgba(255,107,53,0.1);
+            color: var(--secondary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #ff5722;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,107,53,0.3);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+
+        .login-link a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background-color: #ffe0e0;
+            border-left: 4px solid #dc3545;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: #721c24;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            color: #155724;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+
+            .role-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚚</div>
+            <h1>TRUKKER</h1>
+            <p>Crea tu cuenta y comienza hoy</p>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Creando tu cuenta...</p>
+        </div>
+
+        <form id="register-form">
+            <div class="form-group">
+                <label>¿Qué tipo de cuenta necesitas?</label>
+                <div class="role-selector">
+                    <div class="role-option">
+                        <input type="radio" id="transportista" name="role" value="transportista" checked>
+                        <label for="transportista" class="role-label">🚚 Transportista</label>
+                    </div>
+                    <div class="role-option">
+                        <input type="radio" id="empresa" name="role" value="empresa">
+                        <label for="empresa" class="role-label">📦 Empresa</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="nombre">Nombre Completo</label>
+                <input type="text" id="nombre" placeholder="Juan Pérez" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="tu@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="Mínimo 6 caracteres" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" placeholder="+52 81 1234 5678" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ciudad">Ciudad</label>
+                <input type="text" id="ciudad" placeholder="Monterrey" required>
+            </div>
+
+            <!-- CAMPOS TRANSPORTISTA -->
+            <div id="transportista-fields" style="display: block;">
+                <div class="form-group">
+                    <label for="tipo-camion">Tipo de Camión</label>
+                    <select id="tipo-camion">
+                        <option value="">Selecciona una opción</option>
+                        <option value="volteo">Volteo</option>
+                        <option value="caja">Caja Seca</option>
+                        <option value="refrigerado">Refrigerado</option>
+                        <option value="plataforma">Plataforma</option>
+                        <option value="tanque">Tanque</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="placas">Placas del Vehículo</label>
+                    <input type="text" id="placas" placeholder="ABC-1234">
+                </div>
+
+                <div class="form-group">
+                    <label for="capacidad">Capacidad (Toneladas)</label>
+                    <input type="number" id="capacidad" placeholder="10" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="experiencia">Años de Experiencia</label>
+                    <input type="number" id="experiencia" placeholder="5" min="0">
+                </div>
+            </div>
+
+            <!-- CAMPOS EMPRESA -->
+            <div id="empresa-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="empresa-nombre">Nombre de Empresa</label>
+                    <input type="text" id="empresa-nombre" placeholder="Mi Empresa S.A.">
+                </div>
+
+                <div class="form-group">
+                    <label for="giro">Giro / Industria</label>
+                    <select id="giro">
+                        <option value="">Selecciona una opción</option>
+                        <option value="retail">Retail</option>
+                        <option value="manufactura">Manufactura</option>
+                        <option value="alimenticia">Alimenticia</option>
+                        <option value="logistica">Logística</option>
+                        <option value="otra">Otra</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rfc">RFC</label>
+                    <input type="text" id="rfc" placeholder="ABC123456XYZ">
+                </div>
+
+                <div class="form-group">
+                    <label for="volumen">Volumen Mensual Estimado (Toneladas)</label>
+                    <input type="number" id="volumen" placeholder="100" min="1">
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Crear Cuenta</button>
+        </form>
+
+        <div class="login-link">
+            ¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a>
+        </div>
+    </div>
+
+    <!-- ========================================
+         FIREBASE SDKs - COMPAT MODE v10.8.0
+         ======================================== -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <!-- ========================================
+         LÓGICA DEL REGISTRO
+         ======================================== -->
+    <script>
+        // Cambiar vista según tipo de usuario
+        document.querySelectorAll('input[name="role"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const transportistaFields = document.getElementById('transportista-fields');
+                const empresaFields = document.getElementById('empresa-fields');
+                
+                if (this.value === 'transportista') {
+                    transportistaFields.style.display = 'block';
+                    empresaFields.style.display = 'none';
+                } else {
+                    transportistaFields.style.display = 'none';
+                    empresaFields.style.display = 'block';
+                }
+            });
+        });
+
+        // Registrar usuario
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            hideMessages();
+            showLoading(true);
+
+            const nombre = document.getElementById('nombre').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const telefono = document.getElementById('telefono').value;
+            const ciudad = document.getElementById('ciudad').value;
+
+            // Validaciones
+            if (password.length < 6) {
+                showError('La contraseña debe tener al menos 6 caracteres');
+                showLoading(false);
+                return;
+            }
+
+            if (!nombre || !email || !telefono || !ciudad) {
+                showError('Por favor completa todos los campos obligatorios');
+                showLoading(false);
+                return;
+            }
+
+            try {
+                // Crear usuario en Firebase Auth
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                const uid = userCredential.user.uid;
+
+                // Datos comunes
+                const userData = {
+                    uid: uid,
+                    nombre: nombre,
+                    email: email,
+                    telefono: telefono,
+                    ciudad: ciudad,
+                    role: role,
+                    createdAt: new Date(),
+                    verificado: false
+                };
+
+                // Si es transportista
+                if (role === 'transportista') {
+                    userData.tipoCamion = document.getElementById('tipo-camion').value || '';
+                    userData.placas = document.getElementById('placas').value || '';
+                    userData.capacidad = parseInt(document.getElementById('capacidad').value) || 0;
+                    userData.experiencia = parseInt(document.getElementById('experiencia').value) || 0;
+                    userData.calificacion = 5;
+                    userData.viajesCompletados = 0;
+                    userData.ingresos = 0;
+                    
+                    // Guardar en users
+                    await firebase.firestore().collection('users').doc(uid).set(userData);
+                    
+                    // Guardar en transportistas
+                    await firebase.firestore().collection('transportistas').doc(uid).set(userData);
+                } 
+                // Si es empresa
+                else {
+                    userData.empresaNombre = document.getElementById('empresa-nombre').value || '';
+                    userData.giro = document.getElementById('giro').value || '';
+                    userData.rfc = document.getElementById('rfc').value || '';
+                    userData.volumen = parseInt(document.getElementById('volumen').value) || 0;
+                    userData.gastosTotal = 0;
+                    userData.entregasCompletadas = 0;
+                    
+                    // Guardar en users
+                    await firebase.firestore().collection('users').doc(uid).set(userData);
+                    
+                    // Guardar en empresas
+                    await firebase.firestore().collection('empresas').doc(uid).set(userData);
+                }
+
+                showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
+                
+                setTimeout(() => {
+                    if (role === 'transportista') {
+                        window.location.href = 'dashboard-transportista.html';
+                    } else {
+                        window.location.href = 'dashboard-empresa.html';
+                    }
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error registrando:', error);
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    showError('Este email ya está registrado. Intenta con login.');
+                } else if (error.code === 'auth/weak-password') {
+                    showError('La contraseña es muy débil');
+                } else if (error.code === 'auth/invalid-email') {
+                    showError('Email inválido');
+                } else {
+                    showError('Error: ' + error.message);
+                }
+                
+                showLoading(false);
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('register-form').style.opacity = show ? '0.5' : '1';
+            document.getElementById('register-form').style.pointerEvents = show ? 'none' : 'auto';
+        }
+
+        // Verificar Firebase al cargar
+        window.addEventListener('load', () => {
+            console.log('✅ register.html cargado');
+            if (typeof firebase !== 'undefined') {
+                console.log('✅ Firebase detectado');
+            } else {
+                console.error('❌ Firebase NO cargado');
+            }
+        });
+    </script>
+</body>
+</html>
